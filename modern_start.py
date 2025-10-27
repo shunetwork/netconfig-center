@@ -501,13 +501,39 @@ def get_template_variables(template_id):
             # 如果是字典，转换为列表
             for key, value in variables_dict.items():
                 if isinstance(value, dict):
-                    # 如果值也是字典（包含type, default等属性）
+                    # 处理 JSON Schema 格式
+                    var_type = value.get('type', 'string')
+                    description = value.get('description', '')
+                    
+                    # 如果是 array 类型，转换为 textarea
+                    if var_type == 'array':
+                        var_type = 'textarea'
+                    
+                    # 获取默认值或空值
+                    default_value = value.get('default', '')
+                    if not default_value and var_type == 'textarea':
+                        default_value = ''  # textarea 默认为空
+                    
+                    # 检查是否必需
+                    required = value.get('required', False)
+                    if not isinstance(required, bool):
+                        required = key in value.get('required', [])
+                    
                     variables_list.append({
                         'name': key,
-                        'type': value.get('type', 'string'),
-                        'default': value.get('default', ''),
-                        'description': value.get('description', ''),
-                        'required': value.get('required', False)
+                        'type': var_type,
+                        'default': default_value,
+                        'description': description,
+                        'required': required
+                    })
+                elif isinstance(value, str) and value == 'string':
+                    # 处理简单格式：{"variable": "string"}
+                    variables_list.append({
+                        'name': key,
+                        'type': 'string',
+                        'default': '',
+                        'description': '',
+                        'required': False
                     })
                 else:
                     # 如果值只是字符串（默认值）
@@ -527,6 +553,8 @@ def get_template_variables(template_id):
             'variables': variables_list
         })
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'success': False,
             'error': str(e)
