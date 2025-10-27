@@ -249,9 +249,11 @@
                             <label for="device_id" class="form-label">目标设备</label>
                             <select class="form-select" id="device_id" name="device_id">
                                 <option value="">请选择设备</option>
-                                <option value="1">测试路由器</option>
-                                <option value="2">核心交换机</option>
-                                <option value="3">接入交换机</option>
+                                {% if devices %}
+                                    {% for device in devices %}
+                                        <option value="{{ device.id }}">{{ device.name }} ({{ device.ip_address }})</option>
+                                    {% endfor %}
+                                {% endif %}
                             </select>
                         </div>
 
@@ -259,10 +261,20 @@
                             <label for="template_id" class="form-label">配置模板</label>
                             <select class="form-select" id="template_id" name="template_id">
                                 <option value="">请选择模板</option>
-                                <option value="1">批量添加VLAN模板</option>
-                                <option value="2">基本配置模板</option>
-                                <option value="3">网络安全模板</option>
+                                {% if templates %}
+                                    {% for template in templates %}
+                                        <option value="{{ template.id }}">{{ template.name }}</option>
+                                    {% endfor %}
+                                {% endif %}
                             </select>
+                        </div>
+                    </div>
+
+                    <!-- 模板变量输入区域 -->
+                    <div class="mb-3" id="template-variables-container" style="display: none;">
+                        <label class="form-label">模板变量</label>
+                        <div id="variables-inputs" class="border rounded p-3 bg-light">
+                            <p class="text-muted small mb-0">请为模板变量输入值</p>
                         </div>
                     </div>
 
@@ -294,6 +306,92 @@
                 commandField.style.display = 'block';
             } else {
                 commandField.style.display = 'none';
+            }
+        });
+
+        // 当选择模板时，加载模板变量
+        document.getElementById('template_id').addEventListener('change', function() {
+            const templateId = this.value;
+            const variablesContainer = document.getElementById('template-variables-container');
+            const variablesInputs = document.getElementById('variables-inputs');
+
+            if (templateId) {
+                // 获取模板变量
+                fetch(`/api/templates/${templateId}/variables`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.variables && Array.isArray(data.variables)) {
+                            let html = '';
+                            
+                            if (data.variables.length > 0) {
+                                html += '<div class="row">';
+                                data.variables.forEach((varDef, index) => {
+                                    const varName = varDef.name || 'var' + index;
+                                    const varType = varDef.type || 'string';
+                                    const varDefault = varDef.default || '';
+                                    const varDesc = varDef.description || '';
+                                    
+                                    let inputHtml = '';
+                                    
+                                    if (varType === 'textarea' || varDef.type === 'text') {
+                                        inputHtml = `
+                                            <div class="mb-3">
+                                                <label for="var_${varName}" class="form-label small fw-bold">
+                                                    ${varName}
+                                                    ${varDef.required ? '<span class="text-danger">*</span>' : ''}
+                                                    ${varDesc ? `<small class="text-muted d-block">${varDesc}</small>` : ''}
+                                                </label>
+                                                <textarea 
+                                                    class="form-control" 
+                                                    id="var_${varName}" 
+                                                    name="template_variables[${varName}]"
+                                                    rows="3"
+                                                    ${varDef.required ? 'required' : ''}
+                                                    placeholder="${varDesc || '请输入' + varName}">${varDefault}</textarea>
+                                            </div>
+                                        `;
+                                    } else {
+                                        inputHtml = `
+                                            <div class="mb-3">
+                                                <label for="var_${varName}" class="form-label small fw-bold">
+                                                    ${varName}
+                                                    ${varDef.required ? '<span class="text-danger">*</span>' : ''}
+                                                    ${varDesc ? `<small class="text-muted d-block">${varDesc}</small>` : ''}
+                                                </label>
+                                                <input 
+                                                    type="text" 
+                                                    class="form-control" 
+                                                    id="var_${varName}" 
+                                                    name="template_variables[${varName}]"
+                                                    value="${varDefault}"
+                                                    ${varDef.required ? 'required' : ''}
+                                                    placeholder="${varDesc || '请输入' + varName}">
+                                            </div>
+                                        `;
+                                    }
+                                    
+                                    html += `<div class="col-md-6">${inputHtml}</div>`;
+                                });
+                                html += '</div>';
+                            } else {
+                                html = '<p class="text-muted small">该模板没有定义变量</p>';
+                            }
+                            
+                            variablesInputs.innerHTML = html;
+                            variablesContainer.style.display = 'block';
+                        } else {
+                            variablesInputs.innerHTML = '<p class="text-muted small">该模板没有定义变量</p>';
+                            variablesContainer.style.display = 'block';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading template variables:', error);
+                        variablesInputs.innerHTML = '<p class="text-danger small">加载变量失败</p>';
+                        variablesContainer.style.display = 'block';
+                    });
+            } else {
+                variablesContainer.style.display = 'none';
+                variablesInputs.innerHTML = '<p class="text-muted small mb-0">请为模板变量输入值</p>';
             }
         });
 
