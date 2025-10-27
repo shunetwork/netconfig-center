@@ -333,21 +333,21 @@
                                     
                                     let inputHtml = '';
                                     
-                                    if (varType === 'textarea' || varDef.type === 'text') {
+                                    if (varType === 'textarea') {
                                         inputHtml = `
                                             <div class="mb-3">
                                                 <label for="var_${varName}" class="form-label small fw-bold">
                                                     ${varName}
                                                     ${varDef.required ? '<span class="text-danger">*</span>' : ''}
-                                                    ${varDesc ? `<small class="text-muted d-block">${varDesc}</small>` : ''}
+                                                    ${varDesc ? `<small class="text-muted d-block">${varDesc.replace(/\n/g, '<br>')}</small>` : ''}
                                                 </label>
                                                 <textarea 
                                                     class="form-control" 
                                                     id="var_${varName}" 
                                                     name="template_variables[${varName}]"
-                                                    rows="3"
+                                                    rows="5"
                                                     ${varDef.required ? 'required' : ''}
-                                                    placeholder="${varDesc || '请输入' + varName}">${varDefault}</textarea>
+                                                    placeholder="${varDesc ? varDesc.split('\\n')[0] : '请输入' + varName}">${varDefault}</textarea>
                                             </div>
                                         `;
                                     } else {
