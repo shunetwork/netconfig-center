@@ -450,7 +450,10 @@ def create_task():
     if request.method == 'GET':
         # 清除之前的flash消息
         get_flashed_messages()
-        return render_template('create_task.html')
+        # 获取所有设备和模板用于下拉选择
+        devices = Device.query.filter_by(is_active=True).all()
+        templates = ConfigTemplate.query.filter_by(is_active=True).all()
+        return render_template('create_task.html', devices=devices, templates=templates)
     
     if request.method == 'POST':
         try:
@@ -468,7 +471,9 @@ def create_task():
             # 验证必填字段
             if not task_data['name']:
                 flash('任务名称不能为空', 'error')
-                return render_template('create_task.html')
+                devices = Device.query.filter_by(is_active=True).all()
+                templates = ConfigTemplate.query.filter_by(is_active=True).all()
+                return render_template('create_task.html', devices=devices, templates=templates)
             
             # TODO: 这里可以添加更多验证逻辑
             # 例如验证设备是否存在、模板是否存在等
@@ -478,7 +483,26 @@ def create_task():
             
         except Exception as e:
             flash(f'任务创建失败: {str(e)}', 'error')
-            return render_template('create_task.html')
+            devices = Device.query.filter_by(is_active=True).all()
+            templates = ConfigTemplate.query.filter_by(is_active=True).all()
+            return render_template('create_task.html', devices=devices, templates=templates)
+
+@app.route('/api/templates/<int:template_id>/variables', methods=['GET'])
+@login_required
+def get_template_variables(template_id):
+    """获取模板变量"""
+    try:
+        template = ConfigTemplate.query.get_or_404(template_id)
+        variables = template.get_variables_dict()
+        return jsonify({
+            'success': True,
+            'variables': variables
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @app.route('/health')
 def health_check():
