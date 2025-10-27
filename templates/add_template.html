@@ -411,8 +411,18 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="variables" class="form-label">变量定义 (JSON格式)</label>
-                                <input type="text" class="form-control" id="variables" name="variables" 
-                                       placeholder='{"hostname": "string", "ip": "string"}'>
+                                <textarea class="form-control code-editor" id="variables" name="variables" 
+                                          rows="8" placeholder='请输入变量定义（JSON格式）'></textarea>
+                                <small class="form-text text-muted">
+                                    <strong>示例1（简单格式）：</strong><br>
+                                    <code>{"hostname": "switch01", "vlan_id": "100", "network": "192.168.1.0"}</code><br><br>
+                                    <strong>示例2（完整格式 - 推荐）：</strong><br>
+                                    <code>[
+  {"name": "vlan_id", "type": "string", "default": "100", "description": "VLAN ID", "required": true},
+  {"name": "vlan_name", "type": "string", "default": "Sales", "description": "VLAN名称", "required": false},
+  {"name": "vlans", "type": "textarea", "default": "10\n20\n30", "description": "VLAN列表", "required": false}
+]</code>
+                                </small>
                             </div>
                         </div>
                     </div>
