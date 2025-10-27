@@ -35,8 +35,8 @@ def test_vlan_template():
     
     # 3. 查找VLAN模板
     print("\n3. 查找批量VLAN模板...")
-    # 这里假设ID是29（从之前的查询结果得知）
-    template_id = 29
+    # 使用ID 33（支持VLAN名称的版本）
+    template_id = 33
     
     # 4. 获取模板变量
     print(f"\n4. 获取模板ID {template_id} 的变量定义...")

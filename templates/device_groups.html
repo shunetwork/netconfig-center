@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}设备分组管理 - NetManagerX{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-0">设备分组管理</h4>
+            <p class="text-muted small mb-0">按分组管理网络设备，提高管理效率</p>
+        </div>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGroupModal">
+            <i class="fas fa-plus"></i> 创建分组
+        </button>
+    </div>
+
+    <!-- 显示消息 -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- 分组列表 -->
+    <div class="row">
+        {% if groups %}
+            {% for group in groups %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header" style="background-color: {{ group.color }}; color: white;">
+                        <h5 class="mb-0">
+                            <i class="fas fa-folder-open"></i> {{ group.name }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">{{ group.description or '无描述' }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-server"></i> {{ group.get_device_count() }} 个设备
+                            </small>
+                            <small class="text-muted">
+                                <i class="fas fa-calendar"></i> {{ group.created_at.strftime('%Y-%m-%d') }}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <div class="btn-group w-100" role="group">
+                            <a href="{{ url_for('devices', group_id=group.id) }}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-eye"></i> 查看设备
+                            </a>
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="editGroup({{ group.id }}, '{{ group.name }}', '{{ group.description or '' }}', '{{ group.color }}')">
+                                <i class="fas fa-edit"></i> 编辑
+                            </button>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="deleteGroup({{ group.id }}, '{{ group.name }}')">
+                                <i class="fas fa-trash"></i> 删除
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 还没有创建任何分组，点击上方"创建分组"按钮开始吧！
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 创建分组模态框 -->
+<div class="modal fade" id="addGroupModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">创建新分组</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('device_groups') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">分组名称 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" required placeholder="例如：核心设备">
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">分组描述</label>
+                        <textarea class="form-control" id="description" name="description" rows="2" placeholder="描述该分组的用途"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="color" class="form-label">分组颜色</label>
+                        <div class="d-flex align-items-center">
+                            <input type="color" class="form-control form-control-color" id="color" name="color" value="#007bff">
+                            <span class="ms-2" id="colorDisplay">#007bff</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">创建分组</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// 颜色选择器实时更新
+document.getElementById('color').addEventListener('change', function() {
+    document.getElementById('colorDisplay').textContent = this.value;
+});
+
+// 删除分组
+function deleteGroup(groupId, groupName) {
+    if (confirm(`确定要删除分组 "${groupName}" 吗？分组内的设备将被移出分组。`)) {
+        fetch(`/api/device-groups/${groupId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('分组删除成功', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            } else {
+                showNotification('删除失败: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('删除分组时出错:', error);
+            showNotification('删除失败，请稍后重试', 'error');
+        });
+    }
+}
+
+// 编辑分组
+function editGroup(groupId, name, description, color) {
+    // TODO: 实现编辑分组功能
+    alert('编辑分组功能待实现');
+}
+
+// 显示通知
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} alert-dismissible fade show`;
+    notification.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 3000);
+}
+</script>
+{% endblock %}

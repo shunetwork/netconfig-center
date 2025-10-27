@@ -40,6 +40,26 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+# 设备分组模型
+class DeviceGroup(db.Model):
+    """设备分组模型"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    description = db.Column(db.Text)
+    color = db.Column(db.String(20), default='#007bff')  # 分组颜色标识
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # 关系
+    devices = db.relationship('Device', backref='group', lazy=True, cascade='all, delete-orphan')
+    
+    def __repr__(self):
+        return f'<DeviceGroup {self.name}>'
+    
+    def get_device_count(self):
+        """获取分组中的设备数量"""
+        return len(self.devices)
+
 # 简化的设备模型
 class Device(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -59,6 +79,9 @@ class Device(db.Model):
     status = db.Column(db.String(20), default='unknown')  # online, offline, unknown
     last_check = db.Column(db.DateTime)
     last_response_time = db.Column(db.Float)  # 响应时间（毫秒）
+    
+    # 设备分组外键
+    group_id = db.Column(db.Integer, db.ForeignKey('device_group.id'), nullable=True)
     
     def __repr__(self):
         return f'<Device {self.name} ({self.ip_address})>'
@@ -133,6 +156,29 @@ class ConfigTemplate(db.Model):
         import json
         self.variables = json.dumps(variables) if variables else None
 
+class Task(db.Model):
+    """任务模型"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    task_type = db.Column(db.String(50), nullable=False)
+    status = db.Column(db.String(20), default='pending')  # pending, running, completed, failed
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # 关联字段
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    device_id = db.Column(db.Integer, db.ForeignKey('device.id'))
+    template_id = db.Column(db.Integer, db.ForeignKey('config_template.id'))
+    
+    # 任务配置
+    command = db.Column(db.Text)
+    template_variables = db.Column(db.Text)  # JSON格式
+    result = db.Column(db.Text)
+    error_message = db.Column(db.Text)
+    
+    def __repr__(self):
+        return f'<Task {self.name}>'
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -180,8 +226,20 @@ def dashboard():
 @app.route('/devices')
 @login_required
 def devices():
-    devices = Device.query.filter_by(is_active=True).all()
-    return render_template('devices.html', devices=devices)
+    # 获取分组筛选参数
+    group_id = request.args.get('group_id', type=int)
+    
+    # 查询设备
+    query = Device.query.filter_by(is_active=True)
+    if group_id:
+        query = query.filter_by(group_id=group_id)
+    
+    devices = query.all()
+    
+    # 获取所有分组
+    groups = DeviceGroup.query.all()
+    
+    return render_template('devices.html', devices=devices, groups=groups, current_group_id=group_id)
 
 @app.route('/devices/add', methods=['GET', 'POST'])
 @login_required
@@ -189,8 +247,18 @@ def add_device():
     if request.method == 'GET':
         # 清除之前的flash消息
         get_flashed_messages()
+        # 获取所有分组用于下拉选择
+        groups = DeviceGroup.query.all()
+        return render_template('add_device.html', groups=groups)
     
     if request.method == 'POST':
+        # 获取分组ID
+        group_id = request.form.get('group_id')
+        if group_id:
+            group_id = int(group_id) if group_id != '' else None
+        else:
+            group_id = None
+        
         device = Device(
             name=request.form.get('name'),
             ip_address=request.form.get('ip_address'),
@@ -201,7 +269,8 @@ def add_device():
             username=request.form.get('username'),
             password=request.form.get('password'),
             description=request.form.get('description'),
-            status='unknown'  # 设置初始状态
+            status='unknown',  # 设置初始状态
+            group_id=group_id
         )
         db.session.add(device)
         db.session.commit()
@@ -215,8 +284,6 @@ def add_device():
         
         flash('设备添加成功！', 'success')
         return redirect(url_for('devices'))
-    
-    return render_template('add_device.html')
 
 @app.route('/api/devices')
 @login_required
@@ -439,10 +506,134 @@ def api_delete_template(template_id):
             'error': str(e)
         }), 500
 
+@app.route('/devices/groups', methods=['GET', 'POST'])
+@login_required
+def device_groups():
+    """设备分组管理页面"""
+    if request.method == 'POST':
+        # 创建新分组
+        try:
+            group = DeviceGroup(
+                name=request.form.get('name'),
+                description=request.form.get('description'),
+                color=request.form.get('color', '#007bff')
+            )
+            db.session.add(group)
+            db.session.commit()
+            flash('分组创建成功！', 'success')
+            return redirect(url_for('device_groups'))
+        except Exception as e:
+            flash(f'创建分组失败: {str(e)}', 'error')
+    
+    # 获取所有分组及每个分组的设备数量
+    groups = DeviceGroup.query.order_by(DeviceGroup.created_at.desc()).all()
+    return render_template('device_groups.html', groups=groups)
+
+@app.route('/api/device-groups', methods=['GET', 'POST'])
+@login_required
+def api_device_groups():
+    """设备分组API"""
+    if request.method == 'POST':
+        # 创建新分组
+        try:
+            data = request.json
+            group = DeviceGroup(
+                name=data.get('name'),
+                description=data.get('description'),
+                color=data.get('color', '#007bff')
+            )
+            db.session.add(group)
+            db.session.commit()
+            return jsonify({
+                'success': True,
+                'message': '分组创建成功',
+                'group': {
+                    'id': group.id,
+                    'name': group.name,
+                    'description': group.description,
+                    'color': group.color,
+                    'device_count': group.get_device_count()
+                }
+            })
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+    
+    # GET: 获取所有分组
+    groups = DeviceGroup.query.all()
+    return jsonify([{
+        'id': group.id,
+        'name': group.name,
+        'description': group.description,
+        'color': group.color,
+        'device_count': group.get_device_count()
+    } for group in groups])
+
+@app.route('/api/device-groups/<int:group_id>', methods=['DELETE'])
+@login_required
+def delete_device_group(group_id):
+    """删除设备分组"""
+    try:
+        group = DeviceGroup.query.get_or_404(group_id)
+        
+        # 将分组中的设备移出分组
+        for device in group.devices:
+            device.group_id = None
+        
+        db.session.delete(group)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': '分组删除成功'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/devices/<int:device_id>/group', methods=['PUT'])
+@login_required
+def update_device_group(device_id):
+    """更新设备所属分组"""
+    try:
+        device = Device.query.get_or_404(device_id)
+        data = request.json
+        group_id = data.get('group_id')
+        
+        if group_id:
+            # 验证分组是否存在
+            group = DeviceGroup.query.get(group_id)
+            if not group:
+                return jsonify({
+                    'success': False,
+                    'error': '分组不存在'
+                }), 404
+            device.group_id = group_id
+        else:
+            device.group_id = None
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': '设备分组更新成功'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/tasks')
 @login_required
 def tasks():
-    return render_template('tasks.html')
+    # 获取所有任务
+    tasks = Task.query.order_by(Task.created_at.desc()).all()
+    return render_template('tasks.html', tasks=tasks)
 
 @app.route('/tasks/create', methods=['GET', 'POST'])
 @login_required
