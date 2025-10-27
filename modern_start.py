@@ -493,10 +493,38 @@ def get_template_variables(template_id):
     """获取模板变量"""
     try:
         template = ConfigTemplate.query.get_or_404(template_id)
-        variables = template.get_variables_dict()
+        variables_dict = template.get_variables_dict()
+        
+        # 将字典转换为列表格式，以便前端处理
+        variables_list = []
+        if isinstance(variables_dict, dict):
+            # 如果是字典，转换为列表
+            for key, value in variables_dict.items():
+                if isinstance(value, dict):
+                    # 如果值也是字典（包含type, default等属性）
+                    variables_list.append({
+                        'name': key,
+                        'type': value.get('type', 'string'),
+                        'default': value.get('default', ''),
+                        'description': value.get('description', ''),
+                        'required': value.get('required', False)
+                    })
+                else:
+                    # 如果值只是字符串（默认值）
+                    variables_list.append({
+                        'name': key,
+                        'type': 'string',
+                        'default': value if isinstance(value, str) else '',
+                        'description': '',
+                        'required': False
+                    })
+        elif isinstance(variables_dict, list):
+            # 如果已经是列表格式，直接使用
+            variables_list = variables_dict
+        
         return jsonify({
             'success': True,
-            'variables': variables
+            'variables': variables_list
         })
     except Exception as e:
         return jsonify({
