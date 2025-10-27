@@ -501,61 +501,53 @@ def get_template_variables(template_id):
             # 如果是字典，转换为列表
             for key, value in variables_dict.items():
                 if isinstance(value, dict):
-                    # 处理 JSON Schema 格式
+                    # 处理完整的变量定义对象
                     var_type = value.get('type', 'string')
                     description = value.get('description', '')
-                    
-                    # 处理 array 类型（复杂嵌套对象）
-                    if var_type == 'array':
-                        # 检查是否有 items 定义
-                        items = value.get('items', {})
-                        if isinstance(items, dict) and 'properties' in items:
-                            # 这是一个复杂的对象数组，转换为 textarea
-                            var_type = 'textarea'
-                            # 生成示例说明
-                            example_props = items.get('properties', {})
-                            example_items = []
-                            for prop_key, prop_val in example_props.items():
-                                if isinstance(prop_val, dict):
-                                    example_items.append(f"{prop_key}: {prop_val.get('type', 'string')}")
-                            if example_items:
-                                description = f"{description}\n示例格式: {{{', '.join(example_items)}}}"
-                        else:
-                            # 简单数组，转换为 textarea
-                            var_type = 'textarea'
-                    
-                    # 获取默认值或空值
                     default_value = value.get('default', '')
-                    if not default_value and var_type == 'textarea':
-                        default_value = ''  # textarea 默认为空
-                    
-                    # 检查是否必需
                     required = value.get('required', False)
-                    if not isinstance(required, bool):
-                        required = key in value.get('required', [])
+                    
+                    # 如果类型是 textarea 或者是需要多行输入的情况
+                    if var_type == 'textarea' or (var_type == 'array' and description and '批量' in description):
+                        var_type = 'textarea'
+                        # 确保默认值是字符串（可能包含多行）
+                        if default_value and isinstance(default_value, list):
+                            default_value = '\n'.join(map(str, default_value))
+                        elif not default_value:
+                            default_value = ''
                     
                     variables_list.append({
                         'name': key,
                         'type': var_type,
-                        'default': default_value,
+                        'default': str(default_value) if default_value else '',
                         'description': description,
-                        'required': required
+                        'required': required if isinstance(required, bool) else False
                     })
-                elif isinstance(value, str) and value == 'string':
-                    # 处理简单格式：{"variable": "string"}
-                    variables_list.append({
-                        'name': key,
-                        'type': 'string',
-                        'default': '',
-                        'description': '',
-                        'required': False
-                    })
+                elif isinstance(value, str):
+                    # 处理简单格式：{"variable": "default_value"} 或 {"variable": "string"}
+                    if value == 'string':
+                        variables_list.append({
+                            'name': key,
+                            'type': 'string',
+                            'default': '',
+                            'description': '',
+                            'required': False
+                        })
+                    else:
+                        # 如果值只是字符串（默认值）
+                        variables_list.append({
+                            'name': key,
+                            'type': 'string',
+                            'default': value,
+                            'description': '',
+                            'required': False
+                        })
                 else:
-                    # 如果值只是字符串（默认值）
+                    # 其他类型（如数字等）
                     variables_list.append({
                         'name': key,
                         'type': 'string',
-                        'default': value if isinstance(value, str) else '',
+                        'default': str(value) if value is not None else '',
                         'description': '',
                         'required': False
                     })
