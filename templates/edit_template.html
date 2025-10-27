@@ -434,11 +434,19 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="variables" class="form-label">变量定义</label>
-                                <textarea class="form-control variables-textarea" id="variables" name="variables" 
-                                          placeholder="JSON格式的变量定义，例如：&#10;{&#10;  &quot;hostname&quot;: {&#10;    &quot;type&quot;: &quot;string&quot;,&#10;    &quot;description&quot;: &quot;设备主机名&quot;,&#10;    &quot;required&quot;: true&#10;  }&#10;}">{{ template.variables or '' }}</textarea>
+                                <textarea class="form-control variables-textarea code-editor" id="variables" name="variables" 
+                                          rows="8" placeholder='请输入变量定义（JSON格式）'>{{ template.variables or '' }}</textarea>
                                 <div class="form-help">
-                                    <i class="fas fa-info-circle"></i>
-                                    变量定义使用JSON格式，用于模板渲染时的参数化配置
+                                    <small class="form-text text-muted">
+                                        <strong>示例1（简单格式）：</strong><br>
+                                        <code>{"hostname": "switch01", "vlan_id": "100", "network": "192.168.1.0"}</code><br><br>
+                                        <strong>示例2（完整格式 - 推荐）：</strong><br>
+                                        <code>[
+  {"name": "vlan_id", "type": "string", "default": "100", "description": "VLAN ID", "required": true},
+  {"name": "vlan_name", "type": "string", "default": "Sales", "description": "VLAN名称", "required": false},
+  {"name": "vlans", "type": "textarea", "default": "10\n20\n30", "description": "VLAN列表", "required": false}
+]</code>
+                                    </small>
                                 </div>
                             </div>
                         </div>
