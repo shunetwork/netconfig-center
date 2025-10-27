@@ -505,9 +505,24 @@ def get_template_variables(template_id):
                     var_type = value.get('type', 'string')
                     description = value.get('description', '')
                     
-                    # 如果是 array 类型，转换为 textarea
+                    # 处理 array 类型（复杂嵌套对象）
                     if var_type == 'array':
-                        var_type = 'textarea'
+                        # 检查是否有 items 定义
+                        items = value.get('items', {})
+                        if isinstance(items, dict) and 'properties' in items:
+                            # 这是一个复杂的对象数组，转换为 textarea
+                            var_type = 'textarea'
+                            # 生成示例说明
+                            example_props = items.get('properties', {})
+                            example_items = []
+                            for prop_key, prop_val in example_props.items():
+                                if isinstance(prop_val, dict):
+                                    example_items.append(f"{prop_key}: {prop_val.get('type', 'string')}")
+                            if example_items:
+                                description = f"{description}\n示例格式: {{{', '.join(example_items)}}}"
+                        else:
+                            # 简单数组，转换为 textarea
+                            var_type = 'textarea'
                     
                     # 获取默认值或空值
                     default_value = value.get('default', '')
