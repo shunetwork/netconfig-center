@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetManagerX - 编辑模板</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2C3E50;
+            --secondary-color: #3498DB;
+            --success-color: #27AE60;
+            --warning-color: #F39C12;
+            --danger-color: #E74C3C;
+            --info-color: #17A2B8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 250px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, #34495E 100%);
+            z-index: 1000;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header .logo {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .sidebar-nav {
+            padding: 20px 0;
+        }
+
+        .nav-section {
+            margin-bottom: 30px;
+        }
+
+        .nav-section-title {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0 20px;
+            margin-bottom: 10px;
+        }
+
+        .nav-item {
+            margin: 2px 0;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-left-color: var(--secondary-color);
+        }
+
+        .nav-link.active {
+            background-color: rgba(52, 152, 219, 0.2);
+            color: white;
+            border-left-color: var(--secondary-color);
+        }
+
+        .nav-link i {
+            width: 20px;
+            margin-right: 12px;
+            text-align: center;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            min-height: 100vh;
+        }
+
+        .top-header {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .header-icon:hover {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .content-area {
+            padding: 30px;
+        }
+
+        .page-header {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .page-subtitle {
+            color: #6c757d;
+            margin-bottom: 0;
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+
+        .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px 15px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px 15px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-select:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .form-textarea {
+            min-height: 200px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .variables-textarea {
+            min-height: 150px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, #5DADE2 100%);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            border: none;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color) 0%, #58D68D 100%);
+            border: none;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .form-help {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: #6c757d;
+        }
+
+        .form-help i {
+            color: var(--info-color);
+            margin-right: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <a href="#" class="logo">
+                <i class="fas fa-network-wired"></i> NetManagerX
+            </a>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">导航</div>
+                <div class="nav-item">
+                    <a href="/dashboard" class="nav-link">
+                        <i class="fas fa-tachometer-alt"></i>
+                        仪表板
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/devices" class="nav-link">
+                        <i class="fas fa-server"></i>
+                        设备管理
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/templates" class="nav-link active">
+                        <i class="fas fa-file-code"></i>
+                        配置模板
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/tasks" class="nav-link">
+                        <i class="fas fa-tasks"></i>
+                        任务管理
+                    </a>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">管理面板</div>
+                <div class="nav-item">
+                    <a href="/users" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        用户管理
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/backups" class="nav-link">
+                        <i class="fas fa-database"></i>
+                        配置备份
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/logs" class="nav-link">
+                        <i class="fas fa-file-alt"></i>
+                        系统日志
+                    </a>
+                </div>
+            </div>
+        </nav>
+    </div>
+
+    <!-- 主内容区域 -->
+    <div class="main-content">
+        <!-- 顶部导航 -->
+        <div class="top-header">
+            <div class="header-left">
+                <button class="btn btn-link" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="ms-3">
+                    <h5 class="mb-0">编辑模板</h5>
+                    <small class="text-muted">{{ template.name }}</small>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="header-icon" title="搜索">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="header-icon" title="刷新">
+                    <i class="fas fa-sync-alt"></i>
+                </div>
+                <div class="header-icon" title="设置">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <div class="header-icon" title="用户">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- 内容区域 -->
+        <div class="content-area">
+            <!-- 页面标题 -->
+            <div class="page-header">
+                <h1 class="page-title">编辑模板</h1>
+                <p class="page-subtitle">修改模板：{{ template.name }}</p>
+            </div>
+
+            <!-- 编辑表单 -->
+            <div class="form-card">
+                <form method="POST" id="editTemplateForm">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label for="name" class="form-label">模板名称 *</label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ template.name }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="template_type" class="form-label">模板类型</label>
+                                <select class="form-select" id="template_type" name="template_type">
+                                    <option value="config" {{ 'selected' if template.template_type == 'config' else '' }}>配置模板</option>
+                                    <option value="script" {{ 'selected' if template.template_type == 'script' else '' }}>脚本模板</option>
+                                    <option value="backup" {{ 'selected' if template.template_type == 'backup' else '' }}>备份模板</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description" class="form-label">模板描述</label>
+                        <textarea class="form-control" id="description" name="description" 
+                                  rows="3" placeholder="请输入模板描述...">{{ template.description or '' }}</textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="category" class="form-label">分类</label>
+                                <input type="text" class="form-control" id="category" name="category" 
+                                       value="{{ template.category or '' }}" placeholder="例如：网络配置、安全配置等">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="variables" class="form-label">变量定义</label>
+                                <textarea class="form-control variables-textarea" id="variables" name="variables" 
+                                          placeholder="JSON格式的变量定义，例如：&#10;{&#10;  &quot;hostname&quot;: {&#10;    &quot;type&quot;: &quot;string&quot;,&#10;    &quot;description&quot;: &quot;设备主机名&quot;,&#10;    &quot;required&quot;: true&#10;  }&#10;}">{{ template.variables or '' }}</textarea>
+                                <div class="form-help">
+                                    <i class="fas fa-info-circle"></i>
+                                    变量定义使用JSON格式，用于模板渲染时的参数化配置
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="content" class="form-label">模板内容 *</label>
+                        <textarea class="form-control form-textarea" id="content" name="content" 
+                                  required placeholder="请输入模板内容...">{{ template.content or '' }}</textarea>
+                        <div class="form-help">
+                            <i class="fas fa-info-circle"></i>
+                            支持Jinja2模板语法，可以使用变量和条件语句
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <a href="/templates" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> 取消
+                        </a>
+                        <div>
+                            <button type="button" class="btn btn-success me-2" onclick="previewTemplate()">
+                                <i class="fas fa-eye"></i> 预览
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> 保存修改
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 侧边栏切换
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('show');
+        });
+
+        // 表单验证
+        document.getElementById('editTemplateForm').addEventListener('submit', function(e) {
+            const name = document.getElementById('name').value.trim();
+            const content = document.getElementById('content').value.trim();
+            
+            if (!name) {
+                e.preventDefault();
+                alert('请输入模板名称');
+                return;
+            }
+            
+            if (!content) {
+                e.preventDefault();
+                alert('请输入模板内容');
+                return;
+            }
+        });
+
+        // 预览模板
+        function previewTemplate() {
+            const content = document.getElementById('content').value;
+            if (!content.trim()) {
+                alert('请先输入模板内容');
+                return;
+            }
+            
+            // 在新窗口中预览
+            const previewWindow = window.open('', '_blank', 'width=800,height=600');
+            previewWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>模板预览</title>
+                    <style>
+                        body { font-family: 'Courier New', monospace; padding: 20px; background: #f8f9fa; }
+                        pre { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                    </style>
+                </head>
+                <body>
+                    <h3>模板预览</h3>
+                    <pre>${content}</pre>
+                </body>
+                </html>
+            `);
+        }
+
+        // 自动保存草稿（可选功能）
+        let saveTimeout;
+        function autoSave() {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(function() {
+                // 这里可以实现自动保存到localStorage
+                const formData = {
+                    name: document.getElementById('name').value,
+                    content: document.getElementById('content').value,
+                    description: document.getElementById('description').value,
+                    category: document.getElementById('category').value,
+                    variables: document.getElementById('variables').value
+                };
+                localStorage.setItem('template_draft', JSON.stringify(formData));
+            }, 2000);
+        }
+
+        // 监听表单变化
+        ['name', 'content', 'description', 'category', 'variables'].forEach(function(id) {
+            document.getElementById(id).addEventListener('input', autoSave);
+        });
+
+        // 页面加载时恢复草稿
+        window.addEventListener('load', function() {
+            const draft = localStorage.getItem('template_draft');
+            if (draft) {
+                const formData = JSON.parse(draft);
+                document.getElementById('name').value = formData.name || '';
+                document.getElementById('content').value = formData.content || '';
+                document.getElementById('description').value = formData.description || '';
+                document.getElementById('category').value = formData.category || '';
+                document.getElementById('variables').value = formData.variables || '';
+            }
+        });
+
+        // 表单提交时清除草稿
+        document.getElementById('editTemplateForm').addEventListener('submit', function() {
+            localStorage.removeItem('template_draft');
+        });
+    </script>
+</body>
+</html>

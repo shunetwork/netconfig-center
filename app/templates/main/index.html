@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}仪表板 - NetManagerX{% endblock %}
+{% block page_title %}仪表板{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">仪表板</li>
+{% endblock %}
+
+{% block content %}
+<!-- Info boxes -->
+<div class="row">
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="info-box">
+            <span class="info-box-icon bg-info elevation-1"><i class="fas fa-network-wired"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">总设备数</span>
+                <span class="info-box-number">{{ stats.total_devices }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="info-box mb-3">
+            <span class="info-box-icon bg-success elevation-1"><i class="fas fa-check-circle"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">在线设备</span>
+                <span class="info-box-number">{{ stats.online_devices }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="info-box mb-3">
+            <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-exclamation-circle"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">离线设备</span>
+                <span class="info-box-number">{{ stats.offline_devices }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="info-box mb-3">
+            <span class="info-box-icon bg-warning elevation-1"><i class="fas fa-tasks"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">运行中任务</span>
+                <span class="info-box-number">{{ stats.running_tasks }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Tasks -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-tasks mr-1"></i>
+                    最近任务
+                </h3>
+                <div class="card-tools">
+                    <a href="{{ url_for('tasks.index') }}" class="btn btn-sm btn-primary">查看全部</a>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_tasks %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>任务名称</th>
+                                <th>状态</th>
+                                <th>创建时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in recent_tasks %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('tasks.detail', task_id=task.id) }}">
+                                        {{ task.name }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if task.status.value == 'success' %}
+                                        <span class="badge badge-success">成功</span>
+                                    {% elif task.status.value == 'running' %}
+                                        <span class="badge badge-warning">运行中</span>
+                                    {% elif task.status.value == 'failed' %}
+                                        <span class="badge badge-danger">失败</span>
+                                    {% elif task.status.value == 'pending' %}
+                                        <span class="badge badge-info">等待中</span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">{{ task.status.value }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ task.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center p-3">
+                    <p class="text-muted">暂无任务记录</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Audit Logs -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-history mr-1"></i>
+                    最近操作日志
+                </h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-sm btn-primary">查看全部</button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_logs %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>操作</th>
+                                <th>用户</th>
+                                <th>时间</th>
+                                <th>状态</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in recent_logs %}
+                            <tr>
+                                <td>{{ log.action }}</td>
+                                <td>{{ log.user.username if log.user else '系统' }}</td>
+                                <td>{{ log.created_at.strftime('%m-%d %H:%M') }}</td>
+                                <td>
+                                    {% if log.success %}
+                                        <span class="badge badge-success">成功</span>
+                                    {% else %}
+                                        <span class="badge badge-danger">失败</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center p-3">
+                    <p class="text-muted">暂无操作日志</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-bolt mr-1"></i>
+                    快速操作
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="{{ url_for('devices.index') }}" class="btn btn-info btn-block">
+                            <i class="fas fa-plus mr-2"></i>
+                            添加设备
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('templates.index') }}" class="btn btn-success btn-block">
+                            <i class="fas fa-file-code mr-2"></i>
+                            创建模板
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('tasks.index') }}" class="btn btn-warning btn-block">
+                            <i class="fas fa-play mr-2"></i>
+                            执行任务
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="#" class="btn btn-secondary btn-block">
+                            <i class="fas fa-download mr-2"></i>
+                            配置备份
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // 自动刷新统计数据
+    setInterval(function() {
+        $.get('{{ url_for("main.api_stats") }}', function(data) {
+            // 更新统计数字
+            $('.info-box-number').eq(0).text(data.devices.total);
+            $('.info-box-number').eq(1).text(data.devices.online);
+            $('.info-box-number').eq(2).text(data.devices.offline);
+            $('.info-box-number').eq(3).text(data.tasks.running);
+        }).fail(function() {
+            console.log('Failed to fetch stats');
+        });
+    }, 30000); // 每30秒刷新一次
+});
+</script>
+{% endblock %}

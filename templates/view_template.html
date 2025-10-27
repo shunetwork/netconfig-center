@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetManagerX - 查看模板</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2C3E50;
+            --secondary-color: #3498DB;
+            --success-color: #27AE60;
+            --warning-color: #F39C12;
+            --danger-color: #E74C3C;
+            --info-color: #17A2B8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 250px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, #34495E 100%);
+            z-index: 1000;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header .logo {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .sidebar-nav {
+            padding: 20px 0;
+        }
+
+        .nav-section {
+            margin-bottom: 30px;
+        }
+
+        .nav-section-title {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0 20px;
+            margin-bottom: 10px;
+        }
+
+        .nav-item {
+            margin: 2px 0;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-left-color: var(--secondary-color);
+        }
+
+        .nav-link.active {
+            background-color: rgba(52, 152, 219, 0.2);
+            color: white;
+            border-left-color: var(--secondary-color);
+        }
+
+        .nav-link i {
+            width: 20px;
+            margin-right: 12px;
+            text-align: center;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            min-height: 100vh;
+        }
+
+        .top-header {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .header-icon:hover {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .content-area {
+            padding: 30px;
+        }
+
+        .page-header {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .page-subtitle {
+            color: #6c757d;
+            margin-bottom: 0;
+        }
+
+        .template-info-card {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
+        }
+
+        .template-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .template-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--secondary-color) 0%, #5DADE2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            margin-right: 20px;
+        }
+
+        .template-details h3 {
+            margin: 0 0 5px 0;
+            color: var(--primary-color);
+        }
+
+        .template-details p {
+            margin: 0;
+            color: #6c757d;
+        }
+
+        .template-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .meta-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--secondary-color);
+        }
+
+        .meta-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .meta-value {
+            font-size: 16px;
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: linear-gradient(135deg, #D5F4E6 0%, #A8E6CF 100%);
+            color: var(--success-color);
+        }
+
+        .status-inactive {
+            background: linear-gradient(135deg, #FADBD8 0%, #F1948A 100%);
+            color: var(--danger-color);
+        }
+
+        .content-section {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .content-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .content-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 6px;
+        }
+
+        .code-content {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .variables-section {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .variables-content {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <a href="#" class="logo">
+                <i class="fas fa-network-wired"></i> NetManagerX
+            </a>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">导航</div>
+                <div class="nav-item">
+                    <a href="/dashboard" class="nav-link">
+                        <i class="fas fa-tachometer-alt"></i>
+                        仪表板
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/devices" class="nav-link">
+                        <i class="fas fa-server"></i>
+                        设备管理
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/templates" class="nav-link active">
+                        <i class="fas fa-file-code"></i>
+                        配置模板
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/tasks" class="nav-link">
+                        <i class="fas fa-tasks"></i>
+                        任务管理
+                    </a>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">管理面板</div>
+                <div class="nav-item">
+                    <a href="/users" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        用户管理
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/backups" class="nav-link">
+                        <i class="fas fa-database"></i>
+                        配置备份
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/logs" class="nav-link">
+                        <i class="fas fa-file-alt"></i>
+                        系统日志
+                    </a>
+                </div>
+            </div>
+        </nav>
+    </div>
+
+    <!-- 主内容区域 -->
+    <div class="main-content">
+        <!-- 顶部导航 -->
+        <div class="top-header">
+            <div class="header-left">
+                <button class="btn btn-link" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="ms-3">
+                    <h5 class="mb-0">查看模板</h5>
+                    <small class="text-muted">{{ template.name }}</small>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="header-icon" title="搜索">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="header-icon" title="刷新">
+                    <i class="fas fa-sync-alt"></i>
+                </div>
+                <div class="header-icon" title="设置">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <div class="header-icon" title="用户">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- 内容区域 -->
+        <div class="content-area">
+            <!-- 页面标题 -->
+            <div class="page-header">
+                <h1 class="page-title">模板详情</h1>
+                <p class="page-subtitle">查看模板：{{ template.name }}</p>
+            </div>
+
+            <!-- 模板基本信息 -->
+            <div class="template-info-card">
+                <div class="template-header">
+                    <div class="template-icon">
+                        <i class="fas fa-file-code"></i>
+                    </div>
+                    <div class="template-details">
+                        <h3>{{ template.name }}</h3>
+                        <p>{{ template.description or '无描述' }}</p>
+                    </div>
+                </div>
+
+                <div class="template-meta">
+                    <div class="meta-item">
+                        <div class="meta-label">状态</div>
+                        <div class="meta-value">
+                            <span class="status-badge {{ 'status-active' if template.is_active else 'status-inactive' }}">
+                                {{ '活跃' if template.is_active else '非活跃' }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">类型</div>
+                        <div class="meta-value">
+                            {% if template.template_type == 'config' %}
+                                配置模板
+                            {% elif template.template_type == 'script' %}
+                                脚本模板
+                            {% elif template.template_type == 'backup' %}
+                                备份模板
+                            {% else %}
+                                {{ template.template_type }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">分类</div>
+                        <div class="meta-value">{{ template.category or '未分类' }}</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">创建时间</div>
+                        <div class="meta-value">{{ template.created_at.strftime('%Y-%m-%d %H:%M') if template.created_at else '未知' }}</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">更新时间</div>
+                        <div class="meta-value">{{ template.updated_at.strftime('%Y-%m-%d %H:%M') if template.updated_at else '未知' }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 模板内容 -->
+            <div class="content-section">
+                <div class="content-header">
+                    <h3 class="content-title">模板内容</h3>
+                    <div class="content-actions">
+                        <button class="btn btn-sm btn-outline-primary" onclick="copyContent()">
+                            <i class="fas fa-copy"></i> 复制内容
+                        </button>
+                        <button class="btn btn-sm btn-outline-success" onclick="downloadTemplate()">
+                            <i class="fas fa-download"></i> 下载
+                        </button>
+                    </div>
+                </div>
+                <div class="code-content" id="templateContent">{{ template.content or '无内容' }}</div>
+            </div>
+
+            <!-- 变量定义 -->
+            {% if template.variables %}
+            <div class="variables-section">
+                <h3 class="content-title">变量定义</h3>
+                <div class="variables-content" id="templateVariables">{{ template.variables }}</div>
+            </div>
+            {% endif %}
+
+            <!-- 操作按钮 -->
+            <div class="d-flex justify-content-between mt-4">
+                <a href="/templates" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> 返回模板列表
+                </a>
+                <div>
+                    <a href="{{ url_for('edit_template', template_id=template.id) }}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> 编辑模板
+                    </a>
+                    <button class="btn btn-success" onclick="applyTemplate()">
+                        <i class="fas fa-play"></i> 应用模板
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 侧边栏切换
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('show');
+        });
+
+        // 复制内容
+        function copyContent() {
+            const content = document.getElementById('templateContent').textContent;
+            navigator.clipboard.writeText(content).then(function() {
+                alert('模板内容已复制到剪贴板');
+            }).catch(function(err) {
+                console.error('复制失败: ', err);
+                alert('复制失败，请手动复制');
+            });
+        }
+
+        // 下载模板
+        function downloadTemplate() {
+            const content = document.getElementById('templateContent').textContent;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '{{ template.name }}.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // 应用模板
+        function applyTemplate() {
+            alert('应用模板功能待实现');
+        }
+    </script>
+</body>
+</html>
