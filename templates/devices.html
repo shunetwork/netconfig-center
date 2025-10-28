@@ -88,6 +88,18 @@
             border-left-color: var(--secondary-color);
         }
 
+        .sub-nav {
+            margin-left: 20px;
+            font-size: 0.9em;
+            padding: 8px 15px;
+            border-left: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .sub-nav:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            transform: translateX(3px);
+        }
+
         .nav-link.active {
             background-color: rgba(52, 152, 219, 0.2);
             color: white;
@@ -533,15 +545,22 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="/devices" class="nav-link active">
+                    <a href="{{ url_for('devices') }}" class="nav-link active">
                         <i class="fas fa-server"></i>
                         设备管理
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="/devices/groups" class="nav-link">
+                    <a href="{{ url_for('device_groups') }}" class="nav-link">
                         <i class="fas fa-layer-group"></i>
                         设备分组
+                        <span class="badge bg-info ms-2" id="groupCount">0</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/devices/groups/add" class="nav-link sub-nav">
+                        <i class="fas fa-plus-circle"></i>
+                        创建分组
                     </a>
                 </div>
                 <div class="nav-item">
@@ -618,15 +637,19 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="/dashboard">仪表板</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">设备管理</li>
+                    <li class="breadcrumb-item active" aria-current="page" id="breadcrumb-current">设备管理</li>
                 </ol>
             </nav>
 
             <!-- 页面标题 -->
-            <h1 class="page-title">设备管理</h1>
+            <h1 class="page-title" id="page-title">设备管理</h1>
 
-            <!-- 数据表格卡片 -->
-            <div class="data-card">
+            <!-- 动态内容区域 -->
+            <div id="dynamic-content">
+                <!-- 设备列表内容 -->
+                <div id="device-list-content">
+                    <!-- 数据表格卡片 -->
+                    <div class="data-card">
                 <div class="card-header">
                     <h3 class="card-title">设备列表</h3>
                 </div>
@@ -645,12 +668,24 @@
                     </div>
                     
                     <div class="controls-right">
+                        <!-- 分组筛选 -->
+                        <select class="form-select" style="width: 200px; margin-right: 10px;" onchange="filterByGroup(this.value)">
+                            <option value="">所有分组</option>
+                            {% if groups %}
+                                {% for group in groups %}
+                                    <option value="{{ group.id }}" {% if current_group_id == group.id %}selected{% endif %}>
+                                        {{ group.name }}
+                                    </option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                        
                         <div class="search-box">
                             <i class="fas fa-search search-icon"></i>
                             <input type="text" class="search-input" placeholder="搜索设备...">
                         </div>
                         
-                        <button class="add-device-btn" onclick="checkAllDeviceStatus()">
+                        <button class="add-device-btn" onclick="checkAllDeviceStatus(event)">
                             <i class="fas fa-sync-alt"></i>
                             检查状态
                         </button>
@@ -760,6 +795,8 @@
                         </ul>
                     </nav>
                 </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -769,6 +806,35 @@
         // 侧边栏切换
         document.getElementById('sidebarToggle').addEventListener('click', function() {
             document.querySelector('.sidebar').classList.toggle('show');
+        });
+
+        // 加载分组数量
+        function loadGroupCount() {
+            fetch('/api/device-groups')
+            .then(response => response.json())
+            .then(data => {
+                const count = Array.isArray(data) ? data.length : (data.groups ? data.groups.length : 0);
+                const groupCountElement = document.getElementById('groupCount');
+                if (groupCountElement) {
+                    groupCountElement.textContent = count;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading group count:', error);
+            });
+        }
+
+        // 设备分组功能已移至独立页面 /devices/groups
+        
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            loadGroupCount();
+            initPagination();
+            
+            // 延迟3秒后自动检查所有设备状态
+            setTimeout(() => {
+                checkAllDeviceStatus(null);
+            }, 3000);
         });
 
         // 表格排序功能
@@ -831,8 +897,32 @@
             }
         }
 
-        function checkAllDeviceStatus() {
-            const checkBtn = event.target.closest('button');
+        // 按分组筛选设备
+        function filterByGroup(groupId) {
+            if (groupId === '' || groupId === null) {
+                // 显示所有设备
+                window.location.href = '/devices';
+            } else {
+                // 显示指定分组的设备
+                window.location.href = `/devices?group_id=${groupId}`;
+            }
+        }
+
+        function checkAllDeviceStatus(event) {
+            // 检查是否有event对象，如果没有则查找按钮
+            let checkBtn;
+            if (event && event.target) {
+                checkBtn = event.target.closest('button');
+            } else {
+                // 如果没有event对象，通过选择器查找按钮
+                checkBtn = document.querySelector('button[onclick*="checkAllDeviceStatus"]');
+            }
+            
+            if (!checkBtn) {
+                console.error('找不到检查状态按钮');
+                return;
+            }
+            
             const originalContent = checkBtn.innerHTML;
             
             // 显示加载状态
@@ -1049,15 +1139,6 @@
             setTimeout(initPagination, 100);
         });
         
-        // 页面加载完成后初始化分页和状态检查
-        document.addEventListener('DOMContentLoaded', function() {
-            initPagination();
-            
-            // 延迟3秒后自动检查所有设备状态
-            setTimeout(() => {
-                checkAllDeviceStatus();
-            }, 3000);
-        });
     </script>
 </body>
 </html>

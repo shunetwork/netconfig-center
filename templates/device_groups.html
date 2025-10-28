@@ -7,12 +7,84 @@
     <!-- 页面标题 -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 class="mb-0">设备分组管理</h4>
+            <h4 class="mb-0">
+                <i class="fas fa-layer-group text-primary me-2"></i>
+                设备分组管理
+            </h4>
             <p class="text-muted small mb-0">按分组管理网络设备，提高管理效率</p>
         </div>
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGroupModal">
-            <i class="fas fa-plus"></i> 创建分组
-        </button>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-primary" onclick="refreshGroups()">
+                <i class="fas fa-sync-alt"></i> 刷新
+            </button>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGroupModal">
+                <i class="fas fa-plus"></i> 创建分组
+            </button>
+        </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">总分组数</h6>
+                            <h3 class="mb-0" id="totalGroups">{{ total_groups }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-layer-group fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">活跃分组</h6>
+                            <h3 class="mb-0" id="activeGroups">{{ active_groups }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">总设备数</h6>
+                            <h3 class="mb-0" id="totalDevices">{{ total_devices }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-server fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">空分组</h6>
+                            <h3 class="mb-0" id="emptyGroups">{{ empty_groups }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- 显示消息 -->
@@ -27,39 +99,99 @@
         {% endif %}
     {% endwith %}
 
+    <!-- 搜索和筛选 -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" class="form-control" id="searchGroups" placeholder="搜索分组名称或描述...">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" id="filterGroups">
+                <option value="">所有分组</option>
+                <option value="active">有设备的分组</option>
+                <option value="empty">空分组</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" id="sortGroups">
+                <option value="name">按名称排序</option>
+                <option value="devices">按设备数量排序</option>
+                <option value="created">按创建时间排序</option>
+            </select>
+        </div>
+    </div>
+
     <!-- 分组列表 -->
-    <div class="row">
+    <div class="row" id="groupsContainer">
         {% if groups %}
             {% for group in groups %}
-            <div class="col-md-4 mb-4">
-                <div class="card h-100">
-                    <div class="card-header" style="background-color: {{ group.color }}; color: white;">
-                        <h5 class="mb-0">
-                            <i class="fas fa-folder-open"></i> {{ group.name }}
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">{{ group.description or '无描述' }}</p>
+            <div class="col-lg-4 col-md-6 mb-4 group-card" data-group-name="{{ group.name|lower }}" data-device-count="{{ group.get_device_count() }}" data-created="{{ group.created_at.strftime('%Y-%m-%d') }}">
+                <div class="card h-100 shadow-sm border-0 group-item">
+                    <div class="card-header text-white position-relative" style="background: linear-gradient(135deg, {{ group.color }} 0%, {{ group.color }}dd 100%);">
                         <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted">
-                                <i class="fas fa-server"></i> {{ group.get_device_count() }} 个设备
-                            </small>
-                            <small class="text-muted">
-                                <i class="fas fa-calendar"></i> {{ group.created_at.strftime('%Y-%m-%d') }}
-                            </small>
+                            <h5 class="mb-0">
+                                <i class="fas fa-folder-open me-2"></i>
+                                {{ group.name }}
+                            </h5>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{{ url_for('devices', group_id=group.id) }}">
+                                        <i class="fas fa-eye me-2"></i>查看设备
+                                    </a></li>
+                                    <li><button class="dropdown-item" onclick="editGroup({{ group.id }}, '{{ group.name }}', '{{ group.description or '' }}', '{{ group.color }}')">
+                                        <i class="fas fa-edit me-2"></i>编辑分组
+                                    </button></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><button class="dropdown-item text-danger" onclick="deleteGroup({{ group.id }}, '{{ group.name }}')">
+                                        <i class="fas fa-trash me-2"></i>删除分组
+                                    </button></li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
-                    <div class="card-footer bg-transparent">
-                        <div class="btn-group w-100" role="group">
-                            <a href="{{ url_for('devices', group_id=group.id) }}" class="btn btn-sm btn-primary">
-                                <i class="fas fa-eye"></i> 查看设备
+                    <div class="card-body">
+                        <p class="text-muted mb-3">{{ group.description or '暂无描述' }}</p>
+                        
+                        <!-- 设备统计 -->
+                        <div class="row text-center mb-3">
+                            <div class="col-6">
+                                <div class="border-end">
+                                    <h6 class="text-primary mb-1">{{ group.get_device_count() }}</h6>
+                                    <small class="text-muted">设备数量</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <h6 class="text-success mb-1">{{ group.get_device_count() }}</h6>
+                                <small class="text-muted">在线设备</small>
+                            </div>
+                        </div>
+
+                        <!-- 创建时间 -->
+                        <div class="d-flex align-items-center text-muted small">
+                            <i class="fas fa-calendar me-2"></i>
+                            <span>创建于 {{ group.created_at.strftime('%Y-%m-%d') }}</span>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-0">
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('devices', group_id=group.id) }}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-eye me-2"></i>查看设备
                             </a>
-                            <button type="button" class="btn btn-sm btn-secondary" onclick="editGroup({{ group.id }}, '{{ group.name }}', '{{ group.description or '' }}', '{{ group.color }}')">
-                                <i class="fas fa-edit"></i> 编辑
-                            </button>
-                            <button type="button" class="btn btn-sm btn-danger" onclick="deleteGroup({{ group.id }}, '{{ group.name }}')">
-                                <i class="fas fa-trash"></i> 删除
-                            </button>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="editGroup({{ group.id }}, '{{ group.name }}', '{{ group.description or '' }}', '{{ group.color }}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteGroup({{ group.id }}, '{{ group.name }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -67,8 +199,13 @@
             {% endfor %}
         {% else %}
             <div class="col-12">
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> 还没有创建任何分组，点击上方"创建分组"按钮开始吧！
+                <div class="text-center py-5">
+                    <i class="fas fa-layer-group fa-4x text-muted mb-3"></i>
+                    <h5 class="text-muted">还没有创建任何分组</h5>
+                    <p class="text-muted">点击上方"创建分组"按钮开始管理您的设备分组</p>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGroupModal">
+                        <i class="fas fa-plus me-2"></i>创建第一个分组
+                    </button>
                 </div>
             </div>
         {% endif %}
@@ -83,7 +220,7 @@
                 <h5 class="modal-title">创建新分组</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="POST" action="{{ url_for('device_groups') }}">
+            <form method="POST" action="{{ url_for('add_device_group') }}">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="name" class="form-label">分组名称 <span class="text-danger">*</span></label>
@@ -145,8 +282,8 @@ function deleteGroup(groupId, groupName) {
 
 // 编辑分组
 function editGroup(groupId, name, description, color) {
-    // TODO: 实现编辑分组功能
-    alert('编辑分组功能待实现');
+    // 跳转到编辑页面
+    window.location.href = `/devices/groups/${groupId}/edit`;
 }
 
 // 显示通知
@@ -167,5 +304,118 @@ function showNotification(message, type = 'info') {
         }
     }, 3000);
 }
+
+// 刷新分组列表
+function refreshGroups() {
+    location.reload();
+}
+
+// 搜索功能
+document.getElementById('searchGroups').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const groupCards = document.querySelectorAll('.group-card');
+    
+    groupCards.forEach(card => {
+        const groupName = card.dataset.groupName;
+        const description = card.querySelector('.card-body p').textContent.toLowerCase();
+        
+        if (groupName.includes(searchTerm) || description.includes(searchTerm)) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+});
+
+// 筛选功能
+document.getElementById('filterGroups').addEventListener('change', function() {
+    const filterValue = this.value;
+    const groupCards = document.querySelectorAll('.group-card');
+    
+    groupCards.forEach(card => {
+        const deviceCount = parseInt(card.dataset.deviceCount);
+        
+        if (filterValue === '') {
+            card.style.display = '';
+        } else if (filterValue === 'active' && deviceCount > 0) {
+            card.style.display = '';
+        } else if (filterValue === 'empty' && deviceCount === 0) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+});
+
+// 排序功能
+document.getElementById('sortGroups').addEventListener('change', function() {
+    const sortBy = this.value;
+    const container = document.getElementById('groupsContainer');
+    const groupCards = Array.from(container.querySelectorAll('.group-card'));
+    
+    groupCards.sort((a, b) => {
+        switch(sortBy) {
+            case 'name':
+                return a.dataset.groupName.localeCompare(b.dataset.groupName);
+            case 'devices':
+                return parseInt(b.dataset.deviceCount) - parseInt(a.dataset.deviceCount);
+            case 'created':
+                return b.dataset.created.localeCompare(a.dataset.created);
+            default:
+                return 0;
+        }
+    });
+    
+    // 重新排列DOM元素
+    groupCards.forEach(card => container.appendChild(card));
+});
+
+// 编辑分组
+function editGroup(id, name, description, color) {
+    // 这里可以添加编辑分组的逻辑
+    console.log('编辑分组:', {id, name, description, color});
+    // 可以打开编辑模态框或跳转到编辑页面
+    window.location.href = `/devices/groups/${id}/edit`;
+}
+
+// 删除分组
+function deleteGroup(id, name) {
+    if (confirm(`确定要删除分组 "${name}" 吗？此操作不可撤销。`)) {
+        fetch(`/api/device-groups/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('删除失败: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('删除失败');
+        });
+    }
+}
+
+// 页面加载完成后的初始化
+document.addEventListener('DOMContentLoaded', function() {
+    // 添加卡片悬停效果
+    const groupCards = document.querySelectorAll('.group-item');
+    groupCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.transition = 'transform 0.3s ease';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+});
 </script>
 {% endblock %}

@@ -489,6 +489,58 @@
             box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
         }
 
+        /* 时间线样式 */
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e9ecef;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .timeline-marker {
+            position: absolute;
+            left: -22px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 2px #e9ecef;
+        }
+
+        .timeline-content {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #007bff;
+        }
+
+        .timeline-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #495057;
+        }
+
+        .timeline-text {
+            font-size: 13px;
+            margin-bottom: 5px;
+            color: #6c757d;
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -671,158 +723,89 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="task-avatar">
-                                            <i class="fas fa-terminal"></i>
+                            {% if tasks %}
+                                {% for task in tasks %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="task-avatar">
+                                                {% if task.task_type == 'command' %}
+                                                    <i class="fas fa-terminal"></i>
+                                                {% elif task.task_type == 'config' %}
+                                                    <i class="fas fa-cog"></i>
+                                                {% elif task.task_type == 'backup' %}
+                                                    <i class="fas fa-database"></i>
+                                                {% elif task.task_type == 'restore' %}
+                                                    <i class="fas fa-undo"></i>
+                                                {% elif task.task_type == 'check' %}
+                                                    <i class="fas fa-network-wired"></i>
+                                                {% else %}
+                                                    <i class="fas fa-tasks"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <h6 class="task-name">{{ task.name }}</h6>
+                                                <p class="task-description">{{ task.description or '无描述' }}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h6 class="task-name">设备配置备份</h6>
-                                            <p class="task-description">备份路由器配置到本地</p>
+                                    </td>
+                                    <td>
+                                        {% if task.status == 'pending' %}
+                                            <span class="status-badge status-pending">等待中</span>
+                                        {% elif task.status == 'running' %}
+                                            <span class="status-badge status-running">运行中</span>
+                                        {% elif task.status == 'completed' %}
+                                            <span class="status-badge status-completed">已完成</span>
+                                        {% elif task.status == 'failed' %}
+                                            <span class="status-badge status-failed">失败</span>
+                                        {% else %}
+                                            <span class="status-badge status-pending">未知</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" style="width: {{ task.get_progress_display() }}%"></div>
                                         </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="status-badge status-completed">已完成</span>
-                                </td>
-                                <td>
-                                    <div class="progress-bar">
-                                        <div class="progress-fill" style="width: 100%"></div>
-                                    </div>
-                                </td>
-                                <td>2024-10-23 15:30</td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <button class="action-btn" title="查看详情" onclick="viewTask(1)">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="action-btn" title="重新运行" onclick="rerunTask(1)">
-                                            <i class="fas fa-redo"></i>
-                                        </button>
-                                        <button class="action-btn" title="下载结果" onclick="downloadResult(1)">
-                                            <i class="fas fa-download"></i>
-                                        </button>
-                                        <button class="action-btn danger" title="删除" onclick="deleteTask(1, '设备配置备份')">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="task-avatar">
-                                            <i class="fas fa-cog"></i>
+                                        <small class="text-muted">{{ task.get_progress_display() }}%</small>
+                                    </td>
+                                    <td>{{ task.created_at.strftime('%Y-%m-%d %H:%M') if task.created_at else '未知' }}</td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="action-btn" title="查看详情" onclick="viewTask({{ task.id }})">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            {% if task.status == 'pending' %}
+                                                <button class="action-btn" title="立即执行" onclick="executeTask({{ task.id }})">
+                                                    <i class="fas fa-play"></i>
+                                                </button>
+                                            {% elif task.status == 'running' %}
+                                                <button class="action-btn" title="停止任务" onclick="stopTask({{ task.id }})">
+                                                    <i class="fas fa-stop"></i>
+                                                </button>
+                                            {% elif task.status == 'completed' %}
+                                                <button class="action-btn" title="重新运行" onclick="rerunTask({{ task.id }})">
+                                                    <i class="fas fa-redo"></i>
+                                                </button>
+                                            {% elif task.status == 'failed' %}
+                                                <button class="action-btn" title="重试" onclick="retryTask({{ task.id }})">
+                                                    <i class="fas fa-redo"></i>
+                                                </button>
+                                            {% endif %}
+                                            <button class="action-btn danger" title="删除" onclick="deleteTask({{ task.id }}, '{{ task.name }}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
                                         </div>
-                                        <div>
-                                            <h6 class="task-name">应用配置模板</h6>
-                                            <p class="task-description">将VLAN配置模板应用到交换机</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="status-badge status-running">运行中</span>
-                                </td>
-                                <td>
-                                    <div class="progress-bar">
-                                        <div class="progress-fill" style="width: 65%"></div>
-                                    </div>
-                                </td>
-                                <td>2024-10-23 15:45</td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <button class="action-btn" title="查看详情" onclick="viewTask(2)">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="action-btn" title="停止任务" onclick="stopTask(2)">
-                                            <i class="fas fa-stop"></i>
-                                        </button>
-                                        <button class="action-btn" title="查看日志" onclick="viewLogs(2)">
-                                            <i class="fas fa-file-alt"></i>
-                                        </button>
-                                        <button class="action-btn danger" title="删除" onclick="deleteTask(2, '应用配置模板')">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="task-avatar">
-                                            <i class="fas fa-network-wired"></i>
-                                        </div>
-                                        <div>
-                                            <h6 class="task-name">网络连通性测试</h6>
-                                            <p class="task-description">测试所有设备的网络连通性</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="status-badge status-pending">等待中</span>
-                                </td>
-                                <td>
-                                    <div class="progress-bar">
-                                        <div class="progress-fill" style="width: 0%"></div>
-                                    </div>
-                                </td>
-                                <td>2024-10-23 16:00</td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <button class="action-btn" title="查看详情" onclick="viewTask(3)">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="action-btn" title="立即执行" onclick="executeTask(3)">
-                                            <i class="fas fa-play"></i>
-                                        </button>
-                                        <button class="action-btn" title="编辑任务" onclick="editTask(3)">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="action-btn danger" title="删除" onclick="deleteTask(3, '网络连通性测试')">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="task-avatar">
-                                            <i class="fas fa-exclamation-triangle"></i>
-                                        </div>
-                                        <div>
-                                            <h6 class="task-name">防火墙规则更新</h6>
-                                            <p class="task-description">更新防火墙安全规则</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="status-badge status-failed">失败</span>
-                                </td>
-                                <td>
-                                    <div class="progress-bar">
-                                        <div class="progress-fill" style="width: 30%"></div>
-                                    </div>
-                                </td>
-                                <td>2024-10-23 14:20</td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <button class="action-btn" title="查看详情" onclick="viewTask(4)">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="action-btn" title="重试" onclick="retryTask(4)">
-                                            <i class="fas fa-redo"></i>
-                                        </button>
-                                        <button class="action-btn" title="查看错误" onclick="viewError(4)">
-                                            <i class="fas fa-exclamation-circle"></i>
-                                        </button>
-                                        <button class="action-btn danger" title="删除" onclick="deleteTask(4, '防火墙规则更新')">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        <i class="fas fa-inbox fa-2x mb-3"></i>
+                                        <p>暂无任务，点击"创建任务"开始吧！</p>
+                                    </td>
+                                </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
@@ -884,47 +867,444 @@
 
         // 任务操作函数
         function viewTask(taskId) {
-            alert(`查看任务详情 ID: ${taskId} - 功能待实现`);
+            // 显示任务详情模态框
+            showTaskDetails(taskId);
         }
 
         function rerunTask(taskId) {
-            alert(`重新运行任务 ID: ${taskId} - 功能待实现`);
+            if (confirm(`确定要重新运行任务 ID: ${taskId} 吗？`)) {
+                executeTask(taskId);
+            }
         }
 
         function downloadResult(taskId) {
-            alert(`下载任务结果 ID: ${taskId} - 功能待实现`);
+            // 下载任务结果
+            window.open(`/api/tasks/${taskId}/download`, '_blank');
         }
 
         function stopTask(taskId) {
             if (confirm(`确定要停止任务 ID: ${taskId} 吗？`)) {
-                alert(`停止任务 ID: ${taskId} - 功能待实现`);
+                fetch(`/api/tasks/${taskId}/stop`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('任务已停止', 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showNotification('停止任务失败: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('停止任务时出错:', error);
+                    showNotification('停止任务失败，请稍后重试', 'error');
+                });
             }
         }
 
         function viewLogs(taskId) {
-            alert(`查看任务日志 ID: ${taskId} - 功能待实现`);
+            // 显示任务日志
+            showTaskLogs(taskId);
         }
 
         function executeTask(taskId) {
-            alert(`立即执行任务 ID: ${taskId} - 功能待实现`);
+            if (confirm(`确定要执行任务 ID: ${taskId} 吗？`)) {
+                showNotification('正在执行任务，请稍候...', 'info');
+                
+                fetch(`/api/tasks/${taskId}/execute`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('任务执行完成', 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showNotification('执行任务失败: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('执行任务时出错:', error);
+                    showNotification('执行任务失败，请稍后重试', 'error');
+                });
+            }
         }
 
         function editTask(taskId) {
-            alert(`编辑任务 ID: ${taskId} - 功能待实现`);
+            // 跳转到编辑任务页面
+            window.location.href = `/tasks/${taskId}/edit`;
         }
 
         function retryTask(taskId) {
-            alert(`重试任务 ID: ${taskId} - 功能待实现`);
+            if (confirm(`确定要重试任务 ID: ${taskId} 吗？`)) {
+                executeTask(taskId);
+            }
         }
 
         function viewError(taskId) {
-            alert(`查看错误信息 ID: ${taskId} - 功能待实现`);
+            // 显示错误详情
+            showTaskDetails(taskId);
         }
 
         function deleteTask(taskId, taskName) {
             if (confirm(`确定要删除任务 "${taskName}" 吗？此操作不可撤销。`)) {
-                alert(`删除任务 ID: ${taskId} - 功能待实现`);
+                fetch(`/api/tasks/${taskId}/delete`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('任务已删除', 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showNotification('删除任务失败: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('删除任务时出错:', error);
+                    showNotification('删除任务失败，请稍后重试', 'error');
+                });
             }
+        }
+
+        // 显示任务详情
+        function showTaskDetails(taskId) {
+            // 显示加载状态
+            showNotification('正在加载任务详情...', 'info');
+            
+            fetch(`/api/tasks/${taskId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayTaskDetailsModal(data.task);
+                } else {
+                    showNotification('获取任务详情失败: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('获取任务详情时出错:', error);
+                showNotification('获取任务详情失败，请稍后重试', 'error');
+            });
+        }
+
+        // 显示任务详情模态框
+        function displayTaskDetailsModal(task) {
+            // 创建模态框HTML
+            const modalHtml = `
+                <div class="modal fade" id="taskDetailsModal" tabindex="-1" aria-labelledby="taskDetailsModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title" id="taskDetailsModalLabel">
+                                    <i class="fas fa-info-circle"></i> 任务详情 - ${task.name}
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <!-- 基本信息 -->
+                                    <div class="col-md-6">
+                                        <h6 class="text-primary mb-3"><i class="fas fa-info"></i> 基本信息</h6>
+                                        <table class="table table-sm">
+                                            <tr>
+                                                <td class="fw-bold">任务名称:</td>
+                                                <td>${task.name}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="fw-bold">任务描述:</td>
+                                                <td>${task.description || '无描述'}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="fw-bold">任务类型:</td>
+                                                <td><span class="badge bg-secondary">${getTaskTypeText(task.task_type)}</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td class="fw-bold">任务状态:</td>
+                                                <td><span class="badge ${getStatusBadgeClass(task.status)}">${getStatusText(task.status)}</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td class="fw-bold">创建时间:</td>
+                                                <td>${formatDateTime(task.created_at)}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="fw-bold">开始时间:</td>
+                                                <td>${formatDateTime(task.started_at)}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="fw-bold">完成时间:</td>
+                                                <td>${formatDateTime(task.completed_at)}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="fw-bold">执行者:</td>
+                                                <td>${task.executed_by ? task.executed_by.username : '未执行'}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="fw-bold">重试次数:</td>
+                                                <td>${task.retry_count}/${task.max_retries}</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    
+                                    <!-- 进度和执行信息 -->
+                                    <div class="col-md-6">
+                                        <h6 class="text-primary mb-3"><i class="fas fa-chart-line"></i> 执行信息</h6>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">执行进度:</label>
+                                            <div class="progress mb-2">
+                                                <div class="progress-bar ${getProgressBarClass(task.status)}" style="width: ${task.progress}%"></div>
+                                            </div>
+                                            <small class="text-muted">${task.progress}%</small>
+                                        </div>
+                                        
+                                        ${task.command ? `
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">执行命令:</label>
+                                            <pre class="bg-light p-2 rounded"><code>${task.command}</code></pre>
+                                        </div>
+                                        ` : ''}
+                                        
+                                        ${task.template ? `
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">使用模板:</label>
+                                            <p class="mb-1">${task.template.name}</p>
+                                            <small class="text-muted">${task.template.description || '无描述'}</small>
+                                        </div>
+                                        ` : ''}
+                                        
+                                        ${task.error_message ? `
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold text-danger">错误信息:</label>
+                                            <div class="alert alert-danger p-2">
+                                                <small>${task.error_message}</small>
+                                            </div>
+                                        </div>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                                
+                                <!-- 目标设备 -->
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <h6 class="text-primary mb-3"><i class="fas fa-server"></i> 目标设备 (${task.target_devices.length} 个)</h6>
+                                        ${task.target_devices.length > 0 ? `
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>设备名称</th>
+                                                        <th>IP地址</th>
+                                                        <th>设备类型</th>
+                                                        <th>执行状态</th>
+                                                        <th>执行时间</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    ${task.target_devices.map(device => {
+                                                        const result = task.device_results.find(r => r.device_id === device.id);
+                                                        return `
+                                                        <tr>
+                                                            <td>${device.name}</td>
+                                                            <td>${device.ip_address}</td>
+                                                            <td>${device.device_type}</td>
+                                                            <td>
+                                                                ${result ? `<span class="badge ${result.status === 'success' ? 'bg-success' : 'bg-danger'}">${result.status}</span>` : '<span class="badge bg-secondary">未执行</span>'}
+                                                            </td>
+                                                            <td>${result ? (result.execution_time ? result.execution_time.toFixed(2) + 's' : '-') : '-'}</td>
+                                                        </tr>
+                                                        `;
+                                                    }).join('')}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        ` : '<p class="text-muted">无目标设备</p>'}
+                                    </div>
+                                </div>
+                                
+                                <!-- 执行日志 -->
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <h6 class="text-primary mb-3"><i class="fas fa-list"></i> 执行日志 (最近10条)</h6>
+                                        ${task.logs.length > 0 ? `
+                                        <div class="timeline">
+                                            ${task.logs.map(log => `
+                                            <div class="timeline-item">
+                                                <div class="timeline-marker bg-${getLogActionColor(log.action)}"></div>
+                                                <div class="timeline-content">
+                                                    <h6 class="timeline-title">${getLogActionText(log.action)}</h6>
+                                                    <p class="timeline-text">${log.message}</p>
+                                                    ${log.details ? `<small class="text-muted">${log.details}</small>` : ''}
+                                                    <small class="text-muted">${formatDateTime(log.created_at)}</small>
+                                                </div>
+                                            </div>
+                                            `).join('')}
+                                        </div>
+                                        ` : '<p class="text-muted">暂无日志记录</p>'}
+                                    </div>
+                                </div>
+                                
+                                <!-- 执行结果 -->
+                                ${task.result ? `
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <h6 class="text-primary mb-3"><i class="fas fa-file-alt"></i> 执行结果</h6>
+                                        <pre class="bg-light p-3 rounded"><code>${task.result}</code></pre>
+                                    </div>
+                                </div>
+                                ` : ''}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                                <button type="button" class="btn btn-primary" onclick="downloadTaskResult(${task.id})">
+                                    <i class="fas fa-download"></i> 下载结果
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 移除已存在的模态框
+            const existingModal = document.getElementById('taskDetailsModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // 添加模态框到页面
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // 显示模态框
+            const modal = new bootstrap.Modal(document.getElementById('taskDetailsModal'));
+            modal.show();
+        }
+
+        // 辅助函数
+        function getTaskTypeText(type) {
+            const types = {
+                'command': '命令执行',
+                'config': '配置应用',
+                'backup': '配置备份',
+                'restore': '配置恢复',
+                'check': '状态检查'
+            };
+            return types[type] || type;
+        }
+
+        function getStatusText(status) {
+            const statuses = {
+                'pending': '等待中',
+                'running': '运行中',
+                'completed': '已完成',
+                'failed': '失败'
+            };
+            return statuses[status] || status;
+        }
+
+        function getStatusBadgeClass(status) {
+            const classes = {
+                'pending': 'bg-warning',
+                'running': 'bg-info',
+                'completed': 'bg-success',
+                'failed': 'bg-danger'
+            };
+            return classes[status] || 'bg-secondary';
+        }
+
+        function getProgressBarClass(status) {
+            const classes = {
+                'pending': 'bg-warning',
+                'running': 'bg-info',
+                'completed': 'bg-success',
+                'failed': 'bg-danger'
+            };
+            return classes[status] || 'bg-secondary';
+        }
+
+        function getLogActionText(action) {
+            const actions = {
+                'created': '任务创建',
+                'started': '开始执行',
+                'completed': '执行完成',
+                'failed': '执行失败',
+                'stopped': '任务停止',
+                'deleted': '任务删除'
+            };
+            return actions[action] || action;
+        }
+
+        function getLogActionColor(action) {
+            const colors = {
+                'created': 'primary',
+                'started': 'info',
+                'completed': 'success',
+                'failed': 'danger',
+                'stopped': 'warning',
+                'deleted': 'secondary'
+            };
+            return colors[action] || 'secondary';
+        }
+
+        function formatDateTime(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleString('zh-CN');
+        }
+
+        function downloadTaskResult(taskId) {
+            window.open(`/api/tasks/${taskId}/download`, '_blank');
+        }
+
+        // 显示任务日志
+        function showTaskLogs(taskId) {
+            fetch(`/api/tasks/${taskId}/logs`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    let logContent = '任务日志:\n\n';
+                    data.logs.forEach(log => {
+                        logContent += `[${log.created_at}] ${log.action}: ${log.message}\n`;
+                        if (log.details) {
+                            logContent += `详情: ${log.details}\n`;
+                        }
+                        logContent += '\n';
+                    });
+                    alert(logContent);
+                } else {
+                    showNotification('获取任务日志失败: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('获取任务日志时出错:', error);
+                showNotification('获取任务日志失败，请稍后重试', 'error');
+            });
+        }
+
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} alert-dismissible fade show`;
+            notification.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 3000);
         }
 
         // 分页功能
